@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <h1>Inventory Tracker</h1>
+                <button class="btn-dark-mode" onclick="toggleDarkMode()" title="Toggle dark mode">
+                    <span id="darkModeIcon">🌙</span>
+                </button>
+            </div>
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-label">Inventory Value</span>
+                    <span class="stat-value" id="inventoryValue">$0.00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Expenses</span>
+                    <span class="stat-value" id="totalExpenses">$0.00</span>
+                </div>
+                <div class="stat profit-stat">
+                    <span class="stat-label">Profit</span>
+                    <span class="stat-value" id="totalProfit">$0.00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="inventory">
+                <span>📦</span> Inventory
+            </button>
+            <button class="tab-btn" data-tab="expenses">
+                <span>💰</span> Expenses
+            </button>
+            <button class="tab-btn" data-tab="receipt">
+                <span>📸</span> Receipt
+            </button>
+            <button class="tab-btn" data-tab="reports">
+                <span>📊</span> Reports
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <main class="tab-content">
+            <!-- Inventory Tab -->
+            <section id="inventory" class="tab-pane active">
+                <div class="section-header">
+                    <h2>Inventory Items</h2>
+                    <button class="btn btn-primary" onclick="showAddItemModal()">+ Add Item</button>
+                </div>
+                <div id="itemList" class="item-list">
+                    <p class="loading">Loading items...</p>
+                </div>
+            </section>
+
+            <!-- Expenses Tab -->
+            <section id="expenses" class="tab-pane">
+                <div class="section-header">
+                    <h2>Expenses</h2>
+                    <button class="btn btn-primary" onclick="showAddExpenseModal()">+ Add Expense</button>
+                </div>
+                <div id="expenseList" class="expense-list">
+                    <p class="loading">Loading expenses...</p>
+                </div>
+            </section>
+
+            <!-- Receipt Tab -->
+            <section id="receipt" class="tab-pane">
+                <div class="section-header">
+                    <h2>Receipt Scanner</h2>
+                </div>
+                <div class="receipt-section">
+                    <p class="receipt-description">Upload a photo of a receipt to automatically extract items and add them to your inventory.</p>
+                    <button class="btn btn-primary btn-large" onclick="showReceiptUploadModal()">📷 Take/Upload Receipt</button>
+                </div>
+            </section>
+
+            <!-- Reports Tab -->
+            <section id="reports" class="tab-pane">
+                <div class="section-header">
+                    <h2>Shrinkage Report</h2>
+                </div>
+                <div id="shrinkageReport" class="report-list">
+                    <p class="loading">Loading report...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="addItemModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addItemModal')">&times;</span>
+            <h2>Add New Item</h2>
+            <form onsubmit="handleAddItem(event)">
+                <div class="form-group">
+                    <label for="itemName">Item Name *</label>
+                    <input type="text" id="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemSku">SKU</label>
+                    <input type="text" id="itemSku">
+                </div>
+                <div class="form-group">
+                    <label for="itemCategory">Category</label>
+                    <input type="text" id="itemCategory">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemCost">Unit Cost</label>
+                        <input type="number" id="itemCost" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="itemPrice">Selling Price</label>
+                        <input type="number" id="itemPrice" step="0.01" value="0">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addItemModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="addExpenseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+            <h2>Add Expense</h2>
+            <form onsubmit="handleAddExpense(event)">
+                <div class="form-group">
+                    <label for="expenseDesc">Description *</label>
+                    <input type="text" id="expenseDesc" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseAmount">Amount *</label>
+                    <input type="number" id="expenseAmount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseCategory">Category</label>
+                    <input type="text" id="expenseCategory" placeholder="e.g., Shipping, Office, etc.">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addExpenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Details Modal -->
+    <div id="itemDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('itemDetailsModal')">&times;</span>
+            <h2 id="detailsItemName"></h2>
+            <div id="itemDetails" class="item-details-content"></div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="recordItemLoss()">Record Loss</button>
+                <button class="btn btn-success" onclick="addItemStock()">Add Stock</button>
+                <button class="btn btn-secondary" onclick="closeModal('itemDetailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Upload Modal -->
+    <div id="receiptUploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('receiptUploadModal')">&times;</span>
+            <h2>Upload Receipt</h2>
+            <div class="receipt-upload-form">
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(event)" style="display:none">
+                    <button class="btn btn-primary btn-large" onclick="document.getElementById('receiptFile').click()">
+                        📷 Choose Image
+                    </button>
+                    <p class="upload-hint">or drag and drop an image</p>
+                </div>
+                <div id="uploadProgress" style="display:none; margin-top: 20px;">
+                    <p>Processing receipt...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Items Review Modal -->
+    <div id="receiptItemsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('receiptItemsModal')">&times;</span>
+            <h2>Receipt Items - Review & Add</h2>
+            <p class="receipt-hint">Review the items extracted from your receipt. Click items to match with existing inventory or create new ones.</p>
+            <div id="receiptItemsList" class="receipt-items-list"></div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeModal('receiptItemsModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addAllReceiptItems()">Add Selected Items</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dark mode on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                enableDarkMode();
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
